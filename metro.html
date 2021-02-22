@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <title>test</title>
+		<meta charset="UTF-8">		
+		<style>
+
+@import "/css/style.css";
+@import "/css/var.css";
+@import "/css/fa.css";
+
+body {
+    position: fixed; inset: 0 0 0 0;
+    padding: 0; margin: 0;
+    display: flex; flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+iframe {
+    width: 100%; height: 100%;
+    padding: 0; margin: 0;
+    border: none;
+}
+
+#dialog {
+	position: fixed; inset: 0 0 0 0;
+    z-index: 1;
+}
+
+#status {
+    position: absolute; inset: 0 0 0 auto;
+    width: 400px;
+    pointer-events: none;
+}
+
+nav {
+    position: absolute; inset: 0 0 auto 0;
+    padding: 5px;
+    display: flex; justify-content: space-between;
+    font: 20px "Font Awesome 5 Free";
+    color: #ffffff;
+    user-select: none;
+    pointer-events: none;
+}
+
+nav span {
+    border-radius: 50%;
+    display: inline-flex;
+    width: 32px; height: 32px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 132, 255, 0.5);
+    border-color: #0084ff;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+nav span:hover {
+    background-color: #0084ff;
+}
+
+body:not(.frame) .frame,
+body:not(.dialog) #dialog {
+    display: none;
+}
+
+		</style>
+        <script>
+function showDialog(src, parent) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function () {
+        $.parent = parent;
+
+		document.body.classList.add("dialog");
+	};
+
+    dialog.src = src;
+}
+
+function closeDialog(reset) {
+    document.body.classList.remove("dialog");
+    
+    if (reset) {
+        resetParent();
+    }
+
+    delete $.parent;
+}
+
+function resetParent() {
+    if ($.parent) {
+        $.parent.location.reload();
+    }
+}
+
+function getNodeData (resolve, reject) {
+    $.request.execute({
+        command: "get",
+        target: "node"
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            break;
+        default:
+            reject(this);
+        }
+
+        window.nodeData = JSON.parse(this.responseText);
+
+        resolve();
+    });
+}
+
+function getPositionData (resolve, reject) {
+    $.request.execute({
+        command: "get",
+        target: "position",
+        name: "position"
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            break;
+        default:
+            reject(this);
+        }
+
+        window.positionData = JSON.parse(this.responseText);
+
+        resolve();
+    });
+}
+
+function getPathData(resolve, reject) {
+    $.request.execute({
+        command: "get",
+        target: "path"
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            break;
+        default:
+            reject(this);
+        }
+
+        window.pathData = JSON.parse(this.responseText);
+
+        resolve();
+    });
+}
+
+function getSettingData(resolve, reject) {
+    $.request.execute({
+        command: "get",
+        target: "setting"
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            break;
+        default:
+            reject(this);
+        }
+
+        window.settingData = JSON.parse(this.responseText);
+
+        resolve();
+    });
+}
+
+function getLinkData (resolve, reject) {
+    $.request.execute({
+        command: "get",
+        target: "link"
+    }, function (e) {
+        switch(this.status) {
+        case 200:    
+            break;
+        default:
+            reject(this);
+        }
+
+        window.linkData = JSON.parse(this.responseText);
+
+        resolve();
+    });
+}
+
+function getIconData (resolve, reject) {
+    $.request.execute({
+        command: "get",
+        target: "icon"
+    }, function (e) {
+        switch(this.status) {
+        case 200:    
+            break;
+        default:
+            reject(this);
+        }
+
+        window.linkData = JSON.parse(this.responseText);
+
+        resolve();
+    });
+}
+
+function showMessage (xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESS_EXPIRE["kr"]);
+
+        break;
+    default:
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+        </script>
+	</head>
+	
+	<body class="loading">
+        <iframe id="status"></iframe>
+        <nav>
+            <div>
+            </div>
+            <div class="frame">
+                <span id="popup" title="새 창">&#xf2d2;</span>
+            </div>
+        </nav>
+        <main>
+            <iframe id="view"></iframe>
+        </main>
+        <iframe id="dialog" name="dialog"></iframe>
+        <div class="bg_loading"></div>
+        
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script src="/js/channel.js"></script>
+        <script>
+
+const
+    $ = {
+        request: new Request()
+    };
+
+function initialize() {
+    const arr = [];
+
+    arr.push(new Promise(getNodeData));
+    arr.push(new Promise(getPositionData));
+    arr.push(new Promise(getPathData));
+    arr.push(new Promise(getSettingData));
+    arr.push(new Promise(getLinkData));
+    arr.push(new Promise(getIconData));
+
+    Promise
+        .all(arr)
+        .then(() => {
+            document.getElementById("view").src = "/metro/viewer.html";
+
+            document.getElementById("status").src = "/metro/status.html";
+
+            document.body.classList.remove("loading");
+        })
+        .catch(xhr => {console.log(xhr);
+            showMessage(xhr);
+        });
+}
+
+function initAccount(account) {
+    window.account = account;
+
+    initialize();
+}
+
+if (window === top) {
+    window.account = top.account;
+
+    initialize();
+} else {
+    document.getElementById("popup").onclick = e => {
+        const popup = window.open();
+
+        popup.onload = e => popup.focus();
+
+        popup.location.replace(window.location.pathname);
+    };
+
+    document.body.classList.add("frame");
+
+    Channel.getAccount(initAccount);
+}
+
+		</script>
+	
+	</body>
+	
+</html>

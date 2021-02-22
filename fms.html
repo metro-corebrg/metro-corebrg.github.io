@@ -1,0 +1,863 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>CeMS</title>
+		
+		<style>
+
+@import "/css/var.css";
+@import "/css/fa.css";
+
+body {
+    font : 10pt "맑은 고딕", Arial, Tahoma;
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    padding: 0; margin: 0;
+    display: flex;
+    user-select: none;
+    background-color: var(--var-color-bg);
+}
+
+header {
+    background-color: #1e1f26;
+    flex: none;
+    display: flex; flex-direction: column; align-items: stretch;
+    padding: 1em;
+    color: #ffffff;
+    font-weight: bold;
+    z-index: 2;
+    user-select: none;
+}
+
+header >div {
+    padding: 0.5em;
+    border: 1px solid #ffffff;
+    margin-bottom: 1em;
+}
+
+header >div:hover {
+    color: #000000;
+    background-color: #ffffff;
+}
+
+header div {
+    position: relative;
+    cursor: pointer;
+    overflow: visible;
+    text-align: center;
+}
+
+header div ul {
+    position: absolute; top: 0; left: 0;
+    list-style: none;
+    margin: 0; padding: 0.5em;
+    background-color: #1e1f26;
+    transition: top 0.5s;
+    display: none;
+}
+
+header div:hover ul {
+    top: 100%;
+    display: flex;
+}
+
+header div li {
+    white-space: nowrap;
+    padding: 0.5em;
+    font-size: 10pt;
+}
+
+header div>a {
+    font: 30px "Font Awesome 5 Free";
+}
+
+header >div:active>a {
+    color: #0084ff;
+    transform: translateY(0);
+}
+
+article {
+    flex: 1;
+}
+
+aside {display: none;
+    position: absolute; width: 400px; height: 200px; left: 50%;
+    transform: translateX(-50%);
+}
+
+iframe {
+    border: none;
+    width: 100%; height: 100%;
+}
+
+#dialog {
+	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	padding: 0; margin: 0;
+    z-index: 3;
+}
+
+#status {
+    width: 400px;
+}
+
+footer {
+    position: absolute; inset: auto 0 0 auto;
+    /*display: flex; flex-direction: column;*/
+    padding: 1em;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+}
+
+footer >div {
+    margin: 0.5em;
+    align-self: flex-end;
+}
+
+footer >div::before,
+footer >div::after {
+    display: inline-block;
+    box-sizing: border-box;
+}
+
+footer >div::before {
+    content: attr(data-elapse);
+    padding: 5px 1em;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.5);
+    color: #424242;
+}
+
+footer >div::after {
+    content: attr(data-message);
+    padding: 0.5em 1em;
+    border-radius: 1em 0 0 1em;
+    margin-left: 1em;
+}
+
+footer >div.normal::after {
+    background-color: #00ff00;
+    border: 1px solid #006c00;
+}
+
+footer >div.critical::after {
+    background-color: #ff0000;
+    border: 1px solid #c40000;
+}
+
+footer >div.major::after {
+    background-color: #ffa500;
+    border: 1px solid #c46c00;
+}
+
+footer >div.minor::after {
+    background-color: #ffff00;
+    border: 1px solid #cccc00;
+    color: #c46c00;
+}
+
+footer th {
+    background-color: rgba(255, 255, 255, 0.5);
+    color: #424242;
+}
+
+footer th, footer td {
+    padding: 0.5em 1em;
+}
+
+footer tr.normal td {
+    background-color: #00ff00;
+    color: #005500;
+}
+
+footer tr.critical td {
+    background-color: #ff0000;
+}
+
+footer tr.major td {
+    background-color: #ffa500;
+}
+
+footer tr.minor td {
+    background-color: #ffff00;
+    color: #c46c00;
+}
+
+a:link,
+a:visited {
+    color: inherit;
+    text-decoration: inherit;
+}
+
+body:not(.authorized) header {
+    display: none;
+}
+
+/** account **/
+details {
+    position: relative;
+    display: inline-block;
+}
+
+details[open] summary::before {
+    content: "";
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    background-color: transparent;
+}
+
+summary {
+    outline: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+.popup {
+    position: absolute; top: 100%; right: 0;
+    border-radius: 3px;
+    border: 1px solid rgba(27,31,35,.15);
+    box-shadow: 0 1px 15px rgba(27,31,35,.15);
+    width: 160px;
+    padding: 1em 0;
+    margin-top: 8px;
+    background-color: #ffffff;
+    color: #24292e;
+    z-index: 1;
+    list-style: none;
+    padding: 1em; margin: 0;
+}
+
+.popup::after {
+    position: absolute; top: -14px; right: 10px; left: auto;
+    display: inline-block;
+    content: "";
+    border: 7px solid transparent;
+    border-bottom-color: #fff;
+}
+
+.popup li {
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.popup li:hover {
+    background-color: #0366d6;
+    color: #ffffff;
+}
+
+.popup a {
+    display: block;
+}
+/** account **/
+
+body:not(.authorized) aside,
+body:not(.event) footer,
+body:not(.dialog) #dialog,
+body:not(.root) header ul {
+    display: none;
+}
+
+        </style>
+        <script>
+
+function Commander() {
+    this.initialize(arguments);
+}
+
+{
+    function getAccount(msg, account) {
+        new BroadcastChannel(msg.channel).postMessage(account);
+    }
+
+    Commander.prototype = {
+        initialize: function (args) {
+            this.account = args[0];
+            this.map = {
+                get: {
+                    account: getAccount
+                }
+            };
+        },
+        execute: function (msg) {
+            this.map[msg.command][msg.target](msg, this.account);
+        }
+    };
+}
+
+function signIn(account) {
+    $.request = new Request();
+
+    window.account = account;
+
+    if (account.level === 0) {
+        document.body.classList.add("root");
+    }
+
+    document.title = $.request.agent;
+
+    document.getElementById("user").textContent = account.id;
+    document.getElementById("signout").onclick = onSignOut;
+
+    //window.open("/dc.html"); // TODO 데모 끝나면 삭제할것
+    {
+        const commander = new Commander(account);
+
+        new BroadcastChannel("bc_root").onmessage = e => commander.execute(e.data);
+    }
+
+    $.request.execute({
+        command: "get",
+        target: "setting"
+    }, function () {
+        switch (this.status) {
+        case 200:
+            const
+                settingData = JSON.parse(this.responseText);
+            let home = "about:blank";
+
+            if (!("mute" in settingData) || settingData.mute === "false") {
+                $.sound = new Audio("/siren.mp3");
+            }
+
+            $.request.listen(e => {
+                onEvent(e);
+
+                Channel.sendEvent(e);
+            });
+
+            if ("home" in settingData) {
+                switch (settingData.home) {
+                case "1":
+                    home = "/metro.html";
+
+                    break;
+                case "2":
+                    home = "/topology.html";
+
+                    break;
+                case "3":
+                    home = "/branch.html";
+
+                    break;
+                case "4":
+                    home = "/dc.html";
+
+                    break;
+                case "5":
+                    home = "/TopTen.html";
+
+                    break;
+                }
+            }
+
+            document.getElementById("main").src = home;
+            document.getElementById("status").src = "/metro/status.html";
+
+            document.body.classList.add("authorized");
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function toElapseString(millis) {
+    const elapse = new Date().getTime() - millis;
+
+    if (elapse < 60 *1000) {
+        return `${Math.round(elapse /1000)}초 전`;
+    } else if (elapse < 60 *60 *1000) {
+        return `${Math.round(elapse /60 /1000)}분 전`;
+    } else if (elapse < 24 *60 *60 *1000) {
+        return `${Math.round(elapse /60 /60 /1000)}시간 전`;
+    } else {
+        return `${Math.round(elapse /24 /60 /60 /1000)}일 전`;
+    }
+}
+
+function onEvent(event) {return;
+    if (event == null) {
+        alert("Error!\n\n"+
+            "리스너 응답 없음.");
+
+        window.location.reload();
+    }
+
+    if (event.level < 0) {
+        alert("Notice.\n\n"+
+            "관리자가 서비스를 종료하였습니다.");
+
+        return signOut();
+    }
+
+    const div = document.createElement("div");
+
+    div.dataset.timestamp = new Date().getTime();
+    div.dataset.elapse = "지금";
+    div.dataset.message = `${event.name || event.ip || ""} ${event.message}`;
+
+    document.body.querySelector("footer").appendChild(div);
+
+    document.body.classList.add("event");
+
+    switch(event.origin) {
+    case "critical":
+    case "status":
+    case "snmp":
+    case "updown":
+        break;
+
+    case "register":
+    case "search":
+    case "system":
+    case "warning":
+        break;
+    }
+
+    if (event.level == 2 && $.sound) {
+        try {
+            $.sound.play();
+        } catch (e) {
+            console.log(e);
+        };
+    }
+}
+
+function showDialog(src, parent) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function () {
+        $.parent = parent;
+
+		document.body.classList.add("dialog");
+	};
+
+    dialog.src = src;
+}
+
+function closeDialog(reset) {
+    document.body.classList.remove("dialog");
+    
+    if (reset) {
+        resetParent();
+    }
+
+    delete $.parent;
+}
+
+function resetParent() {
+    if ($.parent) {
+        $.parent.location.reload();
+    }
+}
+
+function signOut() {
+    document.body.classList.add("loading");
+
+    $.request.execute({
+        command: "signout"
+    }, function () {
+        window.location.reload();
+    });
+}
+
+function onSignOut() {
+    if (confirm(CONFIRM_SIGNOUT["kr"])) {
+        signOut();
+    }
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    default:
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+function onTest(e) {
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+        const rows = reader.result.split(/\r?\n/);
+        const locationData = {};
+        let location;
+
+        rows.forEach((row,i) => {
+            const cols = row.split(",");
+            
+            location = {
+                rack: Number(cols[0]),
+                position: Number(cols[1]),
+                maker: cols[2],
+                model: cols[3],
+                name: cols[5] || "",
+            };
+
+            if (cols[6]) {
+                location.ip = cols[6];
+            }
+
+            locationData[String(i +1)] = location;
+        });
+        
+        $.request.execute({
+            command: "test",
+            location: locationData
+        }, function (e) {
+            console.log(this.status);
+        });
+    };
+
+    reader.readAsText(e.target.files[0], "UTF-8");
+}
+        </script>
+    </head>
+    <body class="event">
+        <header>
+            <div title="Home">
+                <a href="/fms.html">
+                    &#xf015;
+                </a>
+                <div>
+                    홈
+                </div>
+            </div>
+            <div title="노선도">
+                <a href="/metro.html" target="main">
+                    &#xf239;
+                </a>
+                <div>
+                    노선도
+                </div>
+            </div>
+            <div title="통계">
+                <a href="/metro.html" target="main">
+                    &#xf573;
+                </a>
+                <div>
+                    통계
+                </div>
+            </div>
+            <!--div title="토폴로지">
+                <a href="/topology.html" target="main">
+                    &#xf0e8;
+                </a>
+                <ul>
+                    <li>
+                        <a href="/topology.html" target="main">보기</a>
+                    </li>
+                    <li>
+                        <a href="/topology/editor.html" target="main">편집</a>
+                    </li>
+                </ul>
+            </div>
+            <div title="지도">
+                <a href="/branch.html" target="main">
+                    &#xf3c5;
+                </a>
+            </div>
+            <div title="데이터센터">
+                <a href="/dc.html" target="main">
+                    &#xf64f;
+                </a>
+                <ul>
+                    <li>
+                        <a href="/dc.html" target="main">보기</a>
+                    </li>
+                    <li>
+                        <a href="/dc/editor.html" target="main">편집</a>
+                    </li>
+                </ul>
+            </div-->
+            <div title="Top Ten">
+                <a href="/topTen.html" target="main">
+                    &#xf160;
+                </a>
+                <div>
+                    성능
+                </div>
+            </div>
+            <div title="이벤트">
+                <a href="/metro/event.html" target="main">
+                    &#xf783;
+                </a>
+                <div>
+                    이벤트
+                </div>
+            </div>
+            <!--div title="감사">
+                <a href="/audit.html" target="main">
+                    &#xf1e5;
+                </a>
+                <div>
+                    감사
+                </div>
+            </div-->
+            <div title="노드 목록">
+                <a href="/node.html" target="main">
+                    &#xf233;
+                </a>
+                <div>
+                    노드
+                </div>
+            </div>
+            <div title="그룹 목록">
+                <a href="/group.html" target="main">
+                    &#xf5fd;
+                </a>
+                <div>
+                    그룹
+                </div>
+            </div>
+            <div title="회선 목록">
+                <a href="/link.html" target="main">
+                    &#xf83e;
+                </a>
+                <div>
+                    회선
+                </div>
+            </div>
+            <div title="사용자 목록">
+                <a href="/user.html" target="main">
+                    &#xf0c0;
+                </a>
+                <div>
+                    사용자
+                </div>
+            </div>
+            <div title="임계 관리">
+                <a href="/critical.html" target="main">
+                    &#xf08d;
+                </a>
+                <div>
+                    임계
+                </div>
+            </div>
+            <!--div title="아이콘">
+                <a href="/icon.html" target="main">
+                    &#xf61f;
+                </a>
+            </div-->
+            <div title="설정">
+                <a href="/metro/setting.html" target="main">
+                    &#xf013;
+                </a>
+                <div>
+                    설정
+                </div>
+            </div>
+            <div title="로그아웃">
+                <a href="/dc.html" target="main">
+                    &#xf011;
+                </a>
+                <div>
+                    종료
+                </div>
+            </div>
+            <div class="account" style="display: none;">
+                <details>
+                    <summary id="user"></summary>
+                    <ul class="popup">
+                        <li id="password">Password</li>
+                        <li id="signout">Sign out</li>
+                    </ul>
+                </details>
+            </div>
+        </header>
+        <article>
+            <aside>
+                <iframe name="status" id="status"></iframe>
+            </aside>
+            <iframe name="main" id="main" src="/metro/connect.html"></iframe>
+        </article>
+        <footer>
+            <table>
+                <tbody id="event">
+                </tbody>
+            </table>
+        </footer>
+        <iframe id="dialog" name="dialog"></iframe>
+
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script src="/js/channel.js"></script>
+        <script>
+
+const $ = {
+        event: document.getElementById("event"),
+        popups: []
+    };
+
+((open) => {
+    window.open = (url, name) => {
+        if (name) {
+            open(url, name);
+        } else {
+            $.popups.push(open(url,
+                "_blank",
+                `left=${window.innerWidth /4},top=${window.innerHeight /4},width=${window.innerWidth /2},height=${window.innerHeight /2}`));
+        }
+    };
+})(window.open);
+
+window.onunload = e => $.popups.forEach(wnd => wnd.close());
+
+document.querySelector("footer").onclick = function (e) {
+    for (let event; event = this.firstChild; ) {
+        this.removeChild(event);
+    }
+    
+    document.body.classList.remove("event");
+
+    document.getElementById("main").src = "/event.html";
+};
+
+document.getElementById("password").onclick = e => {
+    document.querySelector("div.account details").open = false;
+    
+    showDialog("/dialog/password.html");
+}
+
+function refreshEvent() {
+    Array
+        .from(document.querySelector("footer").children)
+        .forEach(event => (event.dataset.elapse = toElapseString(event.dataset.timestamp)));
+    
+    setTimeout(() => window.requestAnimationFrame(refreshEvent), 1000);
+}
+
+//refreshEvent();
+
+function test(event) {
+    const div = document.createElement("div");
+
+    div.dataset.elapse = event.t;
+    div.dataset.message = `${event.name || event.ip || ""} ${event.message}`;
+    
+    div.classList.add(event.c);
+
+    document.body.querySelector("footer").appendChild(div);
+}
+
+function Event() {
+    this.container = document.getElementById("event");
+}
+
+Event.prototype = {
+    add: function (event) {
+        const
+            tr = document.createElement("tr"),
+            th = document.createElement("th"),
+            td = document.createElement("td");
+
+        th.textContent = event.t;
+        td.textContent = `${event.name || event.ip || ""} ${event.message}`; 
+
+        tr.classList.add(event.c);
+
+        tr.appendChild(th);
+        tr.appendChild(td);
+
+        this.container.appendChild(tr);
+
+        return this;
+    }
+};
+/*
+new Event()
+    .add({
+        t: "2021-01-12 19:24:01",
+        name: "방화벽",
+        message: "프로세서 로드 90% 초과",
+        c: "major"
+    })
+    .add({
+        t: "2021-01-12 19:27:09",
+        name: "사당 역사 CCTV",
+        message: "응답 없음",
+        c: "critical"
+    })
+    .add({
+        t: "2021-01-12 19:29:14",
+        name: "방화벽",
+        message: "프로세서 로드 정상",
+        c: "normal"
+    })
+    .add({
+        t: "2021-01-12 20:08:33",
+        name: "백본 스위치",
+        message: "인터페이스 Gi0/24 장애",
+        c: "minor"
+    })
+    .add({
+        t: "2021-01-12 20:08:52",
+        name: "백본 스위치",
+        message: "인터페이스 Gi0/24 정상",
+        c: "normal"
+    })
+    .add({
+        t: "2021-01-12 21:00:41",
+        name: "FMS 서버",
+        message: "메모리 사용량 정상",
+        c: "normal"
+    })
+    .add({
+        t: "2021-01-12 21:38:11",
+        name: "제기동 역사",
+        message: "CCTV 스위치 Fe0/1 송신 임계 초과",
+        c: "major"
+    });
+    */
+/*
+test({
+    t: "2021-01-12 19:24:01",
+    name: "방화벽",
+    message: "프로세서 로드 90% 초과",
+    c: "major"
+});
+
+test({
+    t: "2021-01-12 19:27:09",
+    name: "사당 역사 CCTV",
+    message: "응답 없음",
+    c: "critical"
+});
+
+test({
+    t: "2021-01-12 19:29:14",
+    name: "방화벽",
+    message: "프로세서 로드 정상",
+    c: "normal"
+});
+
+test({
+    t: "2021-01-12 20:08:33",
+    name: "백본 스위치",
+    message: "인터페이스 Gi0/24 장애",
+    c: "minor"
+});
+
+test({
+    t: "2021-01-12 20:08:52",
+    name: "백본 스위치",
+    message: "인터페이스 Gi0/24 정상",
+    c: "normal"
+});
+
+test({
+    t: "2021-01-12 21:00:41",
+    name: "FMS 서버",
+    message: "메모리 사용량 정상",
+    c: "normal"
+});*/
+        </script>
+        
+    </body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="Cache-Control" content="No-Cache">
+		<title>CeMS Status</title>
+		<style>
+
+@import "/css/style.css";
+@import "/css/fa.css";
+
+body {
+    position: fixed; inset: 0 0 0 0;
+    margin: 0; padding: 0;
+    display: flex; flex-direction: column;
+    pointer-events: none;
+}
+
+section {
+    position: relative;
+    flex: 1;
+    border: 3px solid rgba(200, 200, 200, 0.2);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+}
+
+section::before {
+    content: "";
+    position: absolute; inset: 0 0 auto 0; border-top: 10px solid transparent;
+}
+
+section.critical {
+    color: rgba(255, 0, 0, 0.8);
+}
+
+section.critical::before {
+    border-color: rgba(255, 0, 0, 0.8);
+}
+
+section.major {
+    color: rgba(255, 180, 0, 0.8);
+}
+
+section.major::before {
+    border-color: rgba(255, 180, 0, 0.8);
+}
+
+section.minor {
+    color: rgba(255, 255, 0, 0.8);
+}
+
+section.minor::before {
+    border-color:rgba(255, 255, 0, 0.8);
+}
+
+h1 {
+    font-size: 3em;
+}
+
+h2 {
+    color: #ffffff;
+}
+
+		</style>
+		
+		<script>
+
+function initialize() {
+    const count = {
+            shutdown: 0,
+            critical: 0,
+            normal: 0
+        };
+
+    var node, type;
+
+    for (let id in $.nodeData) {
+        node = $.nodeData[id];
+
+        if ("protocol" in node) {
+            type = node.type || "unknown";
+
+            if (!(type in $.typeMap)) {
+                $.typeMap[type] = {
+                    shutdown: 0,
+                    critical: 0,
+                    normal: 0
+                }
+            }
+
+            if ("status" in node && !node.status) {
+                count.shutdown++;
+
+                $.typeMap[type].shutdown++;
+            }
+            else if ("critical" in node && node.critical) {
+                count.critical++;
+
+                $.typeMap[type].critical++;
+            }
+            else {
+                count.normal++;
+
+                $.typeMap[type].normal++;
+            }
+        }
+    }
+/*
+    document.getElementById("normal").textContent = count.normal;
+    document.getElementById("critical").textContent = count.critical;
+    document.getElementById("shutdown").textContent = count.shutdown;
+*/
+    new BroadcastChannel("bc_event").onmessage = e => window.location.reload();
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESS_EXPIRE["kr"]);
+
+        break;
+    default:
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+	</head>
+
+	<body class="loading">
+        <section class="critical">
+            <h2>Critical</h2>
+            <h1>1</h1>
+        </section>
+        <section class="major">
+            <h2>Major</h2>
+            <h1>0</h1>
+        </section>
+        <section class="minor">
+            <h2>Minor</h2>
+            <h1>3</h1>
+        </section>
+
+        <div class="bg_loading"></div>
+
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        
+		<script>
+
+const $ = {
+        request: new Request(),
+        typeMap: {}
+    };
+
+function initNode() {
+    switch (this.status) {
+    case 200:
+        $.nodeData = JSON.parse(this.responseText);
+        
+        initialize();
+
+        document.body.classList.remove("loading");
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+$.request.execute({
+    command: "get",
+    target: "node"
+}, initNode);
+
+		</script>
+	
+	</body>
+</html>
